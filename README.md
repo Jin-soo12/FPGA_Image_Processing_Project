@@ -136,7 +136,7 @@
 
 <img width="1057" height="310" alt="image" src="https://github.com/user-attachments/assets/56a7ba19-0025-4fd7-b03e-ffe3cf233372" />
 
--이렇게 분류 된 횡단보도 구간을 집중 탐지 구역(ROI)으로 설정한 후 횡단보도 구간 내에 특정 객체 픽셀 값이 임계 값을 넘어가면 객체를 탐지해냄.
+- 이렇게 분류 된 횡단보도 구간을 집중 탐지 구역(ROI)으로 설정한 후 횡단보도 구간 내에 특정 객체 픽셀 값이 임계 값을 넘어가면 객체를 탐지해냄.
 
 
 ### 유동량 파악 및 신호 조정
@@ -156,3 +156,81 @@
 
 ## Architecture
 
+### Pixel Label Module
+
+<img width="581" height="331" alt="image" src="https://github.com/user-attachments/assets/7f117f53-cd7f-4050-92c5-773b7cab8ccf" />
+
+- 횡단보도를 명확히 탐지하기 위해 명암의 확실한 구분이 필요 -> RGB 데이터를 HSV로 변환.
+- HSV로 변환한 데이터를 3bit(도로, 횡단보도, 차량, 사람, 기타)의 라벨링 데이터로 변환.
+- 이 과정에서 16bit 데이터(RGB565)를 3bit 라벨링 데이터로 변환하여 데이터의 경량화 수행.
+
+### 횡단보도 구간 검출 Module
+
+<img width="547" height="343" alt="image" src="https://github.com/user-attachments/assets/7e01e08e-0eca-42c7-8f5b-cf700c3f8e68" />
+
+- 라벨링 된 데이터를 기준으로 한 라인에서의 전체 라벨 값 중 흰색 픽셀의 비율을 계산하여 임계 값 이상이면 횡단보도라고 판단.
+- 한 프레임의 판단이 모두 끝나면 횡단보도 구간 책정 및 구간 좌표 검출.
+
+### Motion Detect Module
+
+<img width="578" height="352" alt="image" src="https://github.com/user-attachments/assets/17707093-bcd9-4e30-b306-655a042197ba" />
+
+- 횡단보도 구간 내 특정 객체 라벨링 데이터(사람, 차량)가 임계 값 이상이 되면 객체의 움직임 탐지.
+
+### Violation Detect Module
+
+<img width="573" height="335" alt="image" src="https://github.com/user-attachments/assets/7c2cdc1a-487c-4be0-9910-a60263fa5679" />
+
+- 신호와 횡단보도 구간과 객체의 움직임 정보를 기반하여 횡단보도 구간 내 위반 유무를 판단.
+- 위반이 감지 될 경우 외부로 음성 신호 전달.
+
+---
+
+## SystemVerilog 검증
+
+<img width="926" height="461" alt="image" src="https://github.com/user-attachments/assets/d6171e9d-bb4f-492d-909c-d573e9a71129" />
+
+- 라벨링 모듈을 SystemVerilog를 통해 Monitor를 통한 Scoreboard 자동 검증을 진행.
+
+<img width="469" height="142" alt="image" src="https://github.com/user-attachments/assets/1eb72fa4-155c-4406-99ac-0190988c7504" />
+
+- 검증을 통해 모듈의 100% 정확도를 산출해낼 수 있었음.
+
+
+---
+
+## Trouble Shooting
+
+<img width="458" height="251" alt="image" src="https://github.com/user-attachments/assets/a6f353b6-3a28-49e7-b58c-541f46571767" />
+
+- 이 교통 시스템을 구현하기 위해 기존엔 두 프레임 버퍼간 차이를 활용하려 하였음.
+
+<img width="492" height="254" alt="image" src="https://github.com/user-attachments/assets/c2f06eb0-70eb-47e1-a25b-e0576a8c8863" />
+
+- 하지만 한 프레임만 저장했음에도 LUTRAM + BRAM이 146%의 과도한 메모리 사용량이 확인 됨.
+
+<img width="957" height="398" alt="image" src="https://github.com/user-attachments/assets/9fe529de-b35e-4150-9416-4ec31c085237" />
+
+- 또한 프레임 버퍼를 활용하는 과정에서 **프레임을 저장 -> 프레임 로드 -> 이미지 처리** 라는 긴 이미지 처리시간이 소모.
+- 이로 인해 **실시간 교통 관리 시스템** 이라는 부분의 **실시간성**이 확보될 수 없게 됨.
+
+<img width="420" height="152" alt="image" src="https://github.com/user-attachments/assets/30a759ba-f8be-490c-8592-7029fd0ec033" />
+
+- 기존 프레임 버퍼를 사용하는 방식이 아닌 실시간으로 들어오는 데이터를 **라벨링**처리하여 긴 처리시간 없이 이미지 처리가 가능하도록 함.
+
+<img width="452" height="173" alt="image" src="https://github.com/user-attachments/assets/77f4e107-0dd6-46db-a695-6e4a4c96e685" />
+
+- 또한 프레임 버퍼를 사용 할 필요가 없어졌기 때문에 기존 LUTRAM + BRAM = 146% 메모리 사용량에서 23%로 **84.9% 절감**까지 가능하였음.
+
+---
+
+## 결론 및 고찰
+### 결론
+- 의도한대로 실시간으로 교통을 제어하는 시스템을 구현해내었음.
+- 하드웨어적인 영상처리를 영상처리 시스템의 직접적인 구현을 통해 숙달할 수 있었음.
+- SystemVerilog 검증의 활용으로 모듈 정확도를 확인하였음.
+
+### 느낀점
+- **SCCB 통신 프로토콜**을 처음부터 설계해보면서 **정밀한 데이터시트의 분석과 타이밍의 제어**가 필수적임을 깨달았다.
+- **로직 아날라이저의 파형 분석**으로 디버깅을 해보면서 검증 과정에서 내부적인 테스트(Testbench)뿐만 아니라 **외부적인 파형 분석(로직 아날라이저, 오실로스코프)** 또한 중요함을 깨달았다.
+- 대규모 팀 프로젝트를 진행해보면서 문제를 함께 고민하고 해결하는 과정에서 **소통**이 팀 협업에 있어 가장 중요하다는 것을 깨달았다.
