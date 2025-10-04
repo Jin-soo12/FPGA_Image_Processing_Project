@@ -91,11 +91,68 @@
 ---
 
 ## SCCB-Protocol
-**Protocol 분석**
+### Protocol 분석
 
 <img width="1047" height="502" alt="image" src="https://github.com/user-attachments/assets/3555f4c1-e5f8-4fcb-bd7f-eb44cebb1fe0" />
 
 - I2C 구조와 매우 유사한 프로토콜 방식으로 본래엔 3-wire까지 지원하지만 OV7670 카메라 모듈 특성상 2-wire 방식을 사용
 
 <img width="1100" height="274" alt="image" src="https://github.com/user-attachments/assets/85ea445e-a5b1-4c2d-8c09-2031236123e2" />
+
+- 맨 앞의 8bit는 모듈 고유의 주소 값, 다음 8bit는 레지스터의 주소 값, 마지막 8bit는 입력 데이터 총 24bit의 데이터 전송으로 프로토콜이 동작
+
+<img width="938" height="417" alt="image" src="https://github.com/user-attachments/assets/ecfda5da-e749-4d65-ae9d-b621f5e86ba6" />
+
+<img width="1175" height="447" alt="image" src="https://github.com/user-attachments/assets/8dc97b9c-a58b-49c1-a322-eb1361c204e4" />
+
+### Architecture
+
+<img width="774" height="473" alt="image" src="https://github.com/user-attachments/assets/4976e92b-30e0-4f4f-b392-a149c8d5d5fa" />
+
+### Simulation
+
+<img width="1078" height="423" alt="image" src="https://github.com/user-attachments/assets/8641de21-52a8-4e28-8be5-954edb067874" />
+
+<img width="1076" height="429" alt="image" src="https://github.com/user-attachments/assets/2b4a0cc4-80fa-4acf-9ceb-6fb12553c6cd" />
+
+---
+
+## 알고리즘
+
+### 픽셀 라벨링
+
+<img width="964" height="297" alt="image" src="https://github.com/user-attachments/assets/d9083cc5-5311-4755-a8a4-0f693e86475b" />
+
+- 실시간으로 들어오는 데이터의 특징을 추출하고 라벨링을 진행.
+- 라벨링 된 데이터를 기반으로 특정 객체를 분류하는 알고리즘.
+
+<img width="1121" height="554" alt="image" src="https://github.com/user-attachments/assets/f9de0a31-1a5f-4604-87fa-2291c7135194" />
+
+- 라벨링 된 데이터를 기반으로 횡단보도를 구현하는 방식에 반복 패턴을 감지하는 방식과 라벨 비율로 감지하는 방식을 구상.
+- 반복 패턴은 말 그대로 흰색 검은색의 반복으로 횡단보도를 추출하는 방식, 라벨 비율은 각 라인별로 들어오는 전체 라벨 중 흰색 픽셀의 비율을 계산하여 횡단보도 구간을 추출.
+- 두 방식 모두 사용해본 결과 라벨 비율 방식이 더 정확도가 높아 라벨 비율 방식으로 횡단보도를 구분하기로 결정.
+
+### 객체 탐지
+
+<img width="1057" height="310" alt="image" src="https://github.com/user-attachments/assets/56a7ba19-0025-4fd7-b03e-ffe3cf233372" />
+
+-이렇게 분류 된 횡단보도 구간을 집중 탐지 구역(ROI)으로 설정한 후 횡단보도 구간 내에 특정 객체 픽셀 값이 임계 값을 넘어가면 객체를 탐지해냄.
+
+
+### 유동량 파악 및 신호 조정
+
+<img width="444" height="424" alt="image" src="https://github.com/user-attachments/assets/c26d44c5-04f4-47df-927e-ed6e4f2a71fc" />
+
+- 차량의 탐지를 통해 차량을 카운트하고 카운트 된 값을 기반하여 유동량을 파악
+- 파악된 유동량을 기반하여 차량이 많으면 차량 신호를 길게 하고 차량이 적으면 차량 신호를 짧게 하여 원활한 신호를 받을 수 있도록 설계.
+
+### 신호 위반
+
+<img width="1079" height="394" alt="image" src="https://github.com/user-attachments/assets/62090a95-354c-4110-950a-3d0b17aded25" />
+
+- 횡단보도 구간과 현재 도로 신호를 기반으로 객체가 신호를 위반할 시 즉시 외부로 음성 신호를 보내고 그 객체를 탐지함.
+
+---
+
+## Architecture
 
