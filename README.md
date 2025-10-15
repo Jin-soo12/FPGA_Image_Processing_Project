@@ -88,6 +88,11 @@
 - 이 때 OV7670을 저장하는데 사용되는 wclk과 RAM의 값을 출력하는데 사용되는 rclk이 다른 clk 주기를 가지기 때문에 **CDC문제**가 발생.
 - 이를 해결하기 위해 제어신호를 rclk 도메인에서 **2-FF Syncronizer**로 동기화함으로써 CDC문제를 해결
 
+### 설계 데이터 흐름
+
+<img width="1721" height="729" alt="image" src="https://github.com/user-attachments/assets/b89a2458-4afa-4d73-a6b3-5f53452e0e8f" />
+
+
 ---
 
 ## SCCB-Protocol
